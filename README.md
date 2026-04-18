@@ -48,7 +48,7 @@ Scaffolds a production-ready Go CLI using [Cobra](https://github.com/spf13/cobra
 | `toolchain` | `make` | Task runner: `make` or `mise` |
 | `license` | `MIT` | `MIT`, `Apache-2.0`, `GPL-3.0`, `BSD-3-Clause` |
 
-**Generated structure:**
+**Generated structure** (a `<name>/` subdirectory is created automatically):
 
 ```
 <name>/
@@ -70,8 +70,10 @@ Scaffolds a production-ready Go CLI using [Cobra](https://github.com/spf13/cobra
   configs/config.toml   (optional, with-config=true)
 ```
 
+Pass `--output <dir>` to override the destination and bypass the automatic subdirectory.
+
 **Features:**
-- Subcommands in their own packages
+- Subcommands in their own packages — no `init()`, explicit wiring in `NewRootCmd()`
 - Structured logging via `log/slog` + [tint](https://github.com/lmittmann/tint) for development, JSON for production
 - Environment-specific config overlay (`configs/config_<env>.toml`)
 - `ldflags` version injection (`Version`, `Commit`, `BuildDate`)
