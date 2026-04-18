@@ -20,10 +20,12 @@ func NewCmd() *cobra.Command {
 				n = viper.GetString("hello.default-name")
 			}
 			slog.Info("greeting", "message", greeting+" "+n)
+
 			return nil
 		},
 	}
 
 	cmd.Flags().StringVar(&name, "name", "", "Name to greet (overrides config hello.default-name)")
+
 	return cmd
 }

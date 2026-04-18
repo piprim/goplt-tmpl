@@ -37,6 +37,7 @@ func NewRootCmd() *cobra.Command {
 			} else {
 				h = slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{Level: level})
 			}
+
 			slog.SetDefault(slog.New(h))
 		},
 	}
