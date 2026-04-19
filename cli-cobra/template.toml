@@ -1,6 +1,7 @@
+target-dir  = "{{.Name}}"
+
 [variables]
 name        = ""
-target-dir  = "{{.Name}}"
 short       = ""
 description = ""
 org-prefix  = "github.com/acme"
