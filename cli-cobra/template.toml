@@ -1,4 +1,5 @@
-target-dir = "{{.Name}}"
+description = "A CLI application scaffolded with Cobra, Viper, and optional Docker support"
+target-dir  = "{{.Name}}"
 
 [variables.name]
 kind        = "input"
