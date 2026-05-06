@@ -1,8 +1,12 @@
 VERSION    := $(shell git describe --tags --exact-match 2>/dev/null || echo "dev")
+COMMIT     := $(shell git log --pretty=%h -1 2>/dev/null)
+BUILD_DATE := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 TARGET     := {{.Name}}
 BIN        := ./bin/$(TARGET)
 MODULE     := {{.OrgPrefix}}/{{.Name}}
-LDFLAGS    := -ldflags "-X $(MODULE)/cmd/cmd/version.Version=$(VERSION)"
+LDFLAGS    := -ldflags "-X $(MODULE)/cmd/cmd/version.Version=$(VERSION) \
+                        -X $(MODULE)/cmd/cmd/version.Commit=$(COMMIT) \
+                        -X $(MODULE)/cmd/cmd/version.BuildDate=$(BUILD_DATE)"
 GOARCH     := $(shell go env GOARCH)
 
 ifeq ($(OS),Windows_NT)

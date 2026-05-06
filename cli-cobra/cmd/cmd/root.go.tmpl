@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"log/slog"
 	"os"
 
@@ -21,15 +22,21 @@ var cfgFile string
 
 func NewRootCmd() *cobra.Command {
 	rootCmd := &cobra.Command{
-		Use:   "{{.Name}}",
-		Short: "{{.Short}}",
-		Long:  "{{.Description}}",
-		PersistentPreRun: func(cmd *cobra.Command, args []string) {
-			cmd.Root().SilenceUsage = true
-			cmd.Root().SilenceErrors = true
+		Use:           "{{.Name}}",
+		Short:         "{{.Short}}",
+		Long:          "{{.Description}}",
+		SilenceUsage:  true,
+		SilenceErrors: true,
+		PersistentPreRunE: func(cmd *cobra.Command, _ []string) error {
 {{- if .WithConfig}}
-			config.Load(cfgFile)
+			if err := config.Load(cfgFile); err != nil {
+				return fmt.Errorf("loading config: %w", err)
+			}
 {{- end}}
+			if err := viper.BindPFlag("log-level", cmd.Root().PersistentFlags().Lookup("log-level")); err != nil {
+				return fmt.Errorf("binding log-level flag: %w", err)
+			}
+
 			level := parseLogLevel(viper.GetString("log-level"))
 			var h slog.Handler
 			if viper.GetString("env") == "development" {
@@ -39,12 +46,15 @@ func NewRootCmd() *cobra.Command {
 			}
 
 			slog.SetDefault(slog.New(h))
+
+			return nil
 		},
 	}
 
 {{- if .WithConfig}}
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default: ./configs/config.toml)")
 {{- end}}
+	rootCmd.PersistentFlags().String("log-level", "info", "log level (debug|info|warn|error)")
 
 	rootCmd.AddCommand(
 		version.NewCmd(),

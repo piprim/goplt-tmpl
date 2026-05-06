@@ -60,6 +60,7 @@ description = "License to apply to the project"
 ".dockerignore"   = "{{if .WithDocker}}true{{end}}"
 "Makefile.tmpl"   = "{{if eq .Toolchain \"make\"}}true{{end}}"
 "mise.toml.tmpl"  = "{{if eq .Toolchain \"mise\"}}true{{end}}"
+".claude"         = ""
 
 [hooks]
 post-generate = [

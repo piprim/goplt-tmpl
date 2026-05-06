@@ -1,31 +1,37 @@
 package hello
 
 import (
-	"log/slog"
+	"fmt"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
 func NewCmd() *cobra.Command {
-	var name string
-
 	cmd := &cobra.Command{
 		Use:   "hello",
 		Short: "Say hello (example command)",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			greeting := viper.GetString("hello.greeting")
-			n := name
-			if n == "" {
-				n = viper.GetString("hello.default-name")
+		Args:  cobra.NoArgs,
+		PreRunE: func(cmd *cobra.Command, _ []string) error {
+			if err := viper.BindPFlag("hello.default-name", cmd.Flags().Lookup("name")); err != nil {
+				return fmt.Errorf("binding name flag: %w", err)
 			}
-			slog.Info("greeting", "message", greeting+" "+n)
+
+			return nil
+		},
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			greeting := viper.GetString("hello.greeting")
+			name := viper.GetString("hello.default-name")
+
+			if _, err := fmt.Fprintf(cmd.OutOrStdout(), "%s %s\n", greeting, name); err != nil {
+				return fmt.Errorf("writing greeting: %w", err)
+			}
 
 			return nil
 		},
 	}
 
-	cmd.Flags().StringVar(&name, "name", "", "Name to greet (overrides config hello.default-name)")
+	cmd.Flags().String("name", "", "Name to greet (overrides config hello.default-name)")
 
 	return cmd
 }

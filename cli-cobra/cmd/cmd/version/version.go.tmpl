@@ -2,58 +2,71 @@ package version
 
 import (
 	"fmt"
+	"runtime"
 	"runtime/debug"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
 
 const defaultVersion = "none"
 
-// Version is injected at build time via -ldflags.
-var Version = defaultVersion
+// Version, Commit and BuildDate are injected at build time via -ldflags.
+// When unset (e.g. `go install`), they fall back to runtime/debug build info.
+var (
+	Version   = defaultVersion
+	Commit    = ""
+	BuildDate = ""
+)
 
 const name = "{{.Name}}"
 
-type info struct {
-	time, arch, os, revision string
-	dirty                    bool
+type vcs struct {
+	revision, time string
+	dirty          bool
 }
 
 func buildInfo() string {
-	vinfo := vcsInfo()
-	if vinfo == nil || vinfo.revision == "" {
-		return fmt.Sprintf("%s %s", name, Version)
+	v := readVCS()
+
+	revision := Commit
+	if revision == "" {
+		revision = v.revision
 	}
 
-	dirtyStr := ""
-	if vinfo.dirty {
-		dirtyStr = "-dirty"
+	buildTime := BuildDate
+	if buildTime == "" {
+		buildTime = v.time
 	}
 
-	return fmt.Sprintf(`
-Name: %s
-Version: %s
-Arch: %s
-OS: %s
-Revision: %s%s
-Built at: %s
-`, name, Version, vinfo.arch, vinfo.os, vinfo.revision, dirtyStr, vinfo.time)
+	var b strings.Builder
+	fmt.Fprintf(&b, "Name: %s\n", name)
+	fmt.Fprintf(&b, "Version: %s\n", Version)
+	fmt.Fprintf(&b, "OS/Arch: %s/%s\n", runtime.GOOS, runtime.GOARCH)
+	if revision != "" {
+		dirty := ""
+		if v.dirty {
+			dirty = "-dirty"
+		}
+		fmt.Fprintf(&b, "Revision: %s%s\n", revision, dirty)
+	}
+	if buildTime != "" {
+		fmt.Fprintf(&b, "Built at: %s\n", buildTime)
+	}
+
+	return b.String()
 }
 
-func vcsInfo() *info {
+func readVCS() vcs {
 	dinfo, ok := debug.ReadBuildInfo()
 	if !ok {
-		return nil
+		return vcs{}
 	}
 
-	out := new(info)
+	var out vcs
 
 	for _, s := range dinfo.Settings {
 		switch s.Key {
-		case "GOARCH":
-			out.arch = s.Value
-		case "GOOS":
-			out.os = s.Value
 		case "vcs.revision":
 			out.revision = s.Value
 		case "vcs.time":
@@ -70,8 +83,13 @@ func NewCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "version",
 		Short: "Print version information",
-		Run: func(cmd *cobra.Command, _ []string) {
-			_, _ = fmt.Fprintln(cmd.OutOrStdout(), buildInfo())
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			if _, err := fmt.Fprint(cmd.OutOrStdout(), buildInfo()); err != nil {
+				return fmt.Errorf("writing version: %w", err)
+			}
+
+			return nil
 		},
 	}
 }
